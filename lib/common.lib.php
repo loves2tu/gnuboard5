@@ -1409,10 +1409,17 @@ function view_file_link($file, $width, $height, $content='')
         $attr = '';
 
     if (preg_match("/\.({$config['cf_image_extension']})$/i", $file) && isset($board['bo_table'])) {
-        $attr_href = run_replace('thumb_view_image_href', G5_BBS_URL.'/view_image.php?bo_table='.$board['bo_table'].'&amp;fn='.urlencode($file), $file, $board['bo_table'], $width, $height, $content);
-        $img = '<a href="'.$attr_href.'" target="_blank" class="view_image">';
-        $img .= '<img src="'.G5_DATA_URL.'/file/'.$board['bo_table'].'/'.urlencode($file).'" alt="'.$content.'" '.$attr.'>';
-        $img .= '</a>';
+        if(isset($g5['s3'])) {
+            $attr_href = run_replace('thumb_view_image_href', $g5['s3']->getUrl().'/'.G5_DATA_DIR.'/file/'.$board['bo_table'].'/'.urlencode($file), $file, $board['bo_table'], $width, $height, $content);
+            $img = '<a href="'.$attr_href.'" target="_blank" class="view_image">';
+            $img .= '<img src="'.$g5['s3']->getUrl().'/'.G5_DATA_DIR.'/file/'.$board['bo_table'].'/'.urlencode($file).'" alt="'.$content.'" '.$attr.'>';
+            $img .= '</a>';
+        } else {
+            $attr_href = run_replace('thumb_view_image_href', G5_BBS_URL.'/view_image.php?bo_table='.$board['bo_table'].'&amp;fn='.urlencode($file), $file, $board['bo_table'], $width, $height, $content);
+            $img = '<a href="'.$attr_href.'" target="_blank" class="view_image">';
+            $img .= '<img src="'.G5_DATA_URL.'/file/'.$board['bo_table'].'/'.urlencode($file).'" alt="'.$content.'" '.$attr.'>';
+            $img .= '</a>';
+        }
 
         return $img;
     }
