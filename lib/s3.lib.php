@@ -53,6 +53,12 @@ class S3 {
         $this->_credentials = new Credentials($accessKey, $secretKey);
     }
 
+    public function getS3() {
+        if($this->_s3Client == false) return false;
+
+        return $this->_s3Client;
+    }
+
     private function setS3() {
         if(empty($this->_region)) return false;
         if(empty($this->_version)) return false;
@@ -66,14 +72,21 @@ class S3 {
             );
 
             $this->_s3Client = new S3Client($options);
+
+            $default_opts = [
+                's3' => [
+                    'ACL' => 'private',
+                    'seekable' => true
+                ],
+            ];
+        
+            $default = stream_context_set_default($default_opts);
+
             $this->_s3Client->registerStreamWrapper();
         }
-        
-        return $this->_s3Client;
     }
 
-
-    public function makeDir($dirName = '') {
+    public function makeDir($dirname = '') {
         if($dirname == '') return false;
         if($this->_s3Client == false) return false;
 

@@ -18,19 +18,12 @@ include_once('../lib/hook.lib.php');    // hook 함수 파일
 include_once('../lib/get_data.lib.php');    
 include_once('../lib/uri.lib.php');    // URL 함수 파일
 include_once('../lib/cache.lib.php');
-include_once("../lib/aws/aws-autoloader.php"); // Aws S3 SDK autoloader
+require_once('../lib/s3.lib.php');
 
 $title = G5_VERSION." 설치 완료 3/3";
 include_once ('./install.inc.php');
 
-use Aws\S3\S3Client;
-use Aws\Exception\AwsException;
-use Aws\S3\Exception\S3Exception;
-use Aws\Credentials\Credentials;
-
 $tmp_bo_table   = array ("notice", "qa", "free", "gallery");
-
-//print_r($_POST); exit;
 
 $mysql_host  = isset($_POST['mysql_host']) ? safe_install_string_check($_POST['mysql_host']) : '';
 $mysql_user  = isset($_POST['mysql_user']) ? safe_install_string_check($_POST['mysql_user']) : '';
@@ -69,14 +62,9 @@ if($s3_use_check == 1) {
     }
 
     try {
-        $credentials = new Credentials($s3_access_key, $s3_secret_key);
-        $options = [
-            'region'            => 'ap-northeast-2',
-            'version'           => 'latest',
-            'credentials'       => $credentials,
-        ];
-    
-        $s3_client = new S3Client($options);        
+        $s3 = new S3($s3_access_key, $s3_secret_key, $s3_bucket_name);
+        $s3_client = $s3->getS3();
+
         if($s3_key_check != 1) {
             $buckets = $s3_client->listBuckets();
             $check = false;
@@ -573,7 +561,6 @@ if($g5_shop_install) {
 // s3를 이용하는 경우
 if($s3_use_check == 1) {
     if($s3_client != false) {
-        $s3_client->registerStreamWrapper();
 
         $dir_arr_base = array (
             $data_path.'/cache',
@@ -598,15 +585,13 @@ if($s3_use_check == 1) {
         );
 
         for ($i=0; $i<count($dir_arr_s3); $i++) {
-            mkdir('s3://'.$s3_bucket_name.'/'.$dir_arr_s3[$i], G5_DIR_PERMISSION);
-            chmod('s3://'.$s3_bucket_name.'/'.$dir_arr_s3[$i], G5_DIR_PERMISSION);
+            mkdir($s3->getPath().'/'.$dir_arr_s3[$i], G5_DIR_PERMISSION);
         }
 
         // 게시판 디렉토리 생성 (작은별님,211206)
         for ($i=0; $i<count($tmp_bo_table); $i++) {
             $board_dir = G5_DATA_DIR.'/file/'.$tmp_bo_table[$i];
-            mkdir('s3://'.$s3_bucket_name.'/'.$board_dir, G5_DIR_PERMISSION);
-            chmod('s3://'.$s3_bucket_name.'/'.$board_dir, G5_DIR_PERMISSION);
+            mkdir($s3->getPath().'/'.$board_dir, G5_DIR_PERMISSION);
         }
 
         if($g5_shop_install) {
@@ -618,8 +603,7 @@ if($s3_use_check == 1) {
             );
 
             for ($i=0; $i<count($dir_arr); $i++) {
-                mkdir('s3://'.$s3_bucket_name.'/'.$dir_arr[$i], G5_DIR_PERMISSION);
-                chmod('s3://'.$s3_bucket_name.'/'.$dir_arr[$i], G5_DIR_PERMISSION);
+                mkdir($s3->getPath().'/'.$dir_arr[$i], G5_DIR_PERMISSION);
             }
         }
     } else {
@@ -786,10 +770,10 @@ fclose($f);
 
 if($g5_shop_install) {
     if($s3_use_check == 1 && $s3_client != false) {
-        @copy('./logo_img', 's3://'.$s3_bucket_name.'/'.G5_DATA_DIR.'/common/logo_img');
-        @copy('./logo_img', 's3://'.$s3_bucket_name.'/'.G5_DATA_DIR.'/common/logo_img2');
-        @copy('./mobile_logo_img', 's3://'.$s3_bucket_name.'/'.G5_DATA_DIR.'/common/mobile_logo_img');
-        @copy('./mobile_logo_img', 's3://'.$s3_bucket_name.'/'.G5_DATA_DIR.'/common/mobile_logo_img2');    
+        @copy('./logo_img', $s3->getPath().'/'.G5_DATA_DIR.'/common/logo_img');
+        @copy('./logo_img', $s3->getPath().'/'.G5_DATA_DIR.'/common/logo_img2');
+        @copy('./mobile_logo_img', $s3->getPath().'/'.G5_DATA_DIR.'/common/mobile_logo_img');
+        @copy('./mobile_logo_img', $s3->getPath().'/'.G5_DATA_DIR.'/common/mobile_logo_img2');    
     } else {
         @copy('./logo_img', $data_path.'/common/logo_img');
         @copy('./logo_img', $data_path.'/common/logo_img2');
