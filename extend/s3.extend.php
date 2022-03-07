@@ -31,7 +31,7 @@ if (file_exists($s3config_file)) {
         if(isset($g5['s3']) == false) return false;
 
         if( file_exists($delete_file) ){
-            @unlink($delete_file);
+            unlink($delete_file);
         }
     }
 
@@ -43,6 +43,7 @@ if (file_exists($s3config_file)) {
 
         $fn = preg_replace("/\.[^\.]+$/i", "", basename($file));
         $files = glob($g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/thumb-'.$fn.'*');
+
         if (is_array($files)) {
             foreach ($files as $filename)
                 unlink($filename);
@@ -55,7 +56,7 @@ if (file_exists($s3config_file)) {
         if(isset($g5['s3']) == false) return false;
         if(!$contents) return false;
     
-        run_event('delete_editor_thumbnail_before', $contents);
+        // run_event('delete_editor_thumbnail_before', $contents);
 
         // $contents 중 img 태그 추출
         $matchs = get_editor_image($contents, false);
@@ -65,17 +66,23 @@ if (file_exists($s3config_file)) {
         for($i=0; $i<count($matchs[1]); $i++) {
             // 이미지 path 구함
             $imgurl = @parse_url($matchs[1][$i]);
-            $srcfile = $g5['s3']->getPath().'/'.G5_DATA_DIR.$imgurl['path'];
+            $srcfile = $g5['s3']->getPath().$imgurl['path'];
             if(!preg_match('/(\.jpe?g|\.gif|\.png|\.webp)$/i', $srcfile)) continue;
             $filename = preg_replace("/\.[^\.]+$/i", "", basename($srcfile));
             $filepath = dirname($srcfile);
-            $files = glob($filepath.'/thumb-'.$filename.'*');
+            // s3에서 glob이 적용안되는 관계로 s3 class 내에 glob 관련 함수 작성으로 적용
+            $files = $g5['s3']->glob($filepath.'/thumb-'.$filename.'*');
+
+            // 기존에 에디터로 올라간 파일의 삭제코드가 존재하지 않음으로 인해 해당코드 추가
+            @chmod($srcfile, G5_FILE_PERMISSION);
+            @unlink($srcfile);
+
             if (is_array($files)) {
                 foreach($files as $filename)
                     unlink($filename);
             }
         }
 
-        run_event('delete_editor_thumbnail_after', $contents, $matchs);
+        // run_event('delete_editor_thumbnail_after', $contents, $matchs);
     }
 }

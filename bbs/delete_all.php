@@ -96,6 +96,7 @@ for ($i=$chk_count-1; $i>=0; $i--)
             // 업로드된 파일이 있다면
             $sql2 = " select * from {$g5['board_file_table']} where bo_table = '$bo_table' and wr_id = '{$row['wr_id']}' ";
             $result2 = sql_query($sql2);
+
             while ($row2 = sql_fetch_array($result2)) {
                 // 파일삭제
                 if(isset($g5['s3'])) {

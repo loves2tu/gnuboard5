@@ -90,4 +90,48 @@ class S3 {
 
         return $error_code;
     }
+
+    public function glob($pattern) {
+        if(empty($pattern)) return false;
+
+        $return = [];
+
+        $patternFound = preg_match('(\*|\?|\[.+\])', $pattern, $parentPattern, PREG_OFFSET_CAPTURE);
+        if ($patternFound) {
+            $parent = dirname(substr($pattern, 0, $parentPattern[0][1] + 1));
+            $parentLength = strlen($parent);
+            $leftover = substr($pattern, $parentPattern[0][1]);
+            if (($index = strpos($leftover, '/')) !== FALSE) {
+                $searchPattern = substr($pattern, $parentLength + 1, $parentPattern[0][1] - $parentLength + $index - 1);
+            } else {
+                $searchPattern = substr($pattern, $parentLength + 1);
+            }
+
+            $replacement = [
+                '/\*/' => '.*',
+                '/\?/' => '.'
+            ];
+            $searchPattern = preg_replace(array_keys($replacement), array_values($replacement), $searchPattern);
+
+            if (is_dir($parent."/") && ($dh = opendir($parent."/"))) {
+                while($dir = readdir($dh)) {
+                    if (!in_array($dir, ['.', '..'])) {
+                        if (preg_match("/^". $searchPattern ."$/", $dir)) {
+                            if ($index === FALSE || strlen($leftover) == $index + 1) {
+                                $return[] = $parent . "/" . $dir;
+                            } else {
+                                if (strlen($leftover) > $index + 1) {
+                                    $return = array_merge($return, self::glob("{$parent}/{$dir}" . substr($leftover, $index)));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } elseif(is_dir($pattern) || is_file($$pattern)) {
+            $return[] = $pattern;
+        }
+
+        return $return;
+    }
 }
