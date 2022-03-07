@@ -13,6 +13,7 @@ if (file_exists($s3config_file)) {
     add_event('s3_extend_uploaded_file', 's3_uploaded_file', 10, 2);
     add_event('s3_extend_delete_file', 's3_delete_file', 10, 1);
     add_event('s3_extend_delete_thumbnail', 's3_delete_thumbnail', 10, 2);
+    add_event('s3_extend_delete_qa_thumbnail', 's3_delete_qa_thumbnail', 10, 1);
     add_event('s3_extend_delete_editor_thumbnail', 's3_delete_editor_thumbnail', 10, 1);
 
     function s3_uploaded_file($tmp_file, $dest_file) {
@@ -42,8 +43,23 @@ if (file_exists($s3config_file)) {
         if(!$bo_table || !$file) return false;
 
         $fn = preg_replace("/\.[^\.]+$/i", "", basename($file));
-        $files = glob($g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/thumb-'.$fn.'*');
+        $files = $g5['s3']->glob($g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/thumb-'.$fn.'*');
 
+        if (is_array($files)) {
+            foreach ($files as $filename)
+                unlink($filename);
+        }
+    }
+
+    function s3_delete_qa_thumbnail($file) {
+        global $g5;
+
+        if(!$file)
+            return;
+
+        $fn = preg_replace("/\.[^\.]+$/i", "", basename($file));
+        $files = $g5['s3']->glob($g5['s3']->getPath().'/'.G5_DATA_DIR.'/qa/thumb-'.$fn.'*');
+        
         if (is_array($files)) {
             foreach ($files as $filename)
                 unlink($filename);

@@ -459,8 +459,14 @@ if($w == 'u') {
 }
 
 // 디렉토리가 없다면 생성합니다. (퍼미션도 변경하구요.)
-@mkdir(G5_DATA_PATH.'/file/'.$bo_table, G5_DIR_PERMISSION);
-@chmod(G5_DATA_PATH.'/file/'.$bo_table, G5_DIR_PERMISSION);
+if(isset($g5['s3'])) {
+    @mkdir($g5['s3']->getPath().'/file/'.$bo_table, G5_DIR_PERMISSION);
+    @chmod($g5['s3']->getPath().'/file/'.$bo_table, G5_DIR_PERMISSION);    
+} else {
+    @mkdir(G5_DATA_PATH.'/file/'.$bo_table, G5_DIR_PERMISSION);
+    @chmod(G5_DATA_PATH.'/file/'.$bo_table, G5_DIR_PERMISSION);
+}
+
 
 $chars_array = array_merge(range(0,9), range('a','z'), range('A','Z'));
 

@@ -45,30 +45,57 @@ for($i=0; $i<$count; $i++) {
 
     // 첨부파일 삭제
     for($k=1; $k<=2; $k++) {
-        @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($row['qa_file'.$k]));
-        // 썸네일삭제
-        if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['qa_file'.$k])) {
-            delete_qa_thumbnail($row['qa_file'.$k]);
+        if(isset($g5['s3'])) {
+            $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/qa/'.clean_relative_paths($row['qa_file'.$k]);
+            run_event("s3_extend_delete_file", $delete_file);
+            
+            if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['qa_file'.$k])) {
+                run_event('s3_extend_delete_qa_thumbnail', $row['qa_file'.$k]);
+            }
+        } else {
+            @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($row['qa_file'.$k]));
+            // 썸네일삭제
+            if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['qa_file'.$k])) {
+                delete_qa_thumbnail($row['qa_file'.$k]);
+            }
         }
+        
     }
-
+    
     // 에디터 썸네일 삭제
-    delete_editor_thumbnail($row['qa_content']);
+    if(isset($g5['s3'])) {
+        run_event('s3_extend_delete_editor_thumbnail', $row['qa_content']);
+    } else {
+        delete_editor_thumbnail($row['qa_content']);
+    }
 
     // 답변이 있는 질문글이라면 답변글 삭제
     if(!$row['qa_type'] && $row['qa_status']) {
         $row2 = sql_fetch(" select qa_content, qa_file1, qa_file2 from {$g5['qa_content_table']} where qa_parent = '$qa_id' ");
         // 첨부파일 삭제
         for($k=1; $k<=2; $k++) {
-            @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($row2['qa_file'.$k]));
-            // 썸네일삭제
-            if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['qa_file'.$k])) {
-                delete_qa_thumbnail($row2['qa_file'.$k]);
+            if(isset($g5['s3'])) {
+                $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/qa/'.clean_relative_paths($row2['qa_file'.$k]);
+                run_event("s3_extend_delete_file", $delete_file);
+                
+                if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['qa_file'.$k])) {
+                    run_event('s3_extend_delete_qa_thumbnail', $row2['qa_file'.$k]);
+                }
+            } else {
+                @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($row2['qa_file'.$k]));
+                // 썸네일삭제
+                if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['qa_file'.$k])) {
+                    delete_qa_thumbnail($row2['qa_file'.$k]);
+                }
             }
         }
 
         // 에디터 썸네일 삭제
-        delete_editor_thumbnail($row2['qa_content']);
+        if(isset($g5['s3'])) {
+            run_event('s3_extend_delete_editor_thumbnail', $row2['qa_content']);
+        } else {
+            delete_editor_thumbnail($row2['qa_content']);
+        }
 
         sql_query(" delete from {$g5['qa_content_table']} where qa_type = '1' and qa_parent = '$qa_id' ");
     }

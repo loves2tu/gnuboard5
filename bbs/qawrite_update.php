@@ -157,11 +157,21 @@ for ($i=1; $i<=$upload_count; $i++) {
     // 삭제에 체크가 되어있다면 파일을 삭제합니다.
     if (isset($_POST['bf_file_del'][$i]) && $_POST['bf_file_del'][$i]) {
         $upload[$i]['del_check'] = true;
-        @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($write['qa_file'.$i]));
-        // 썸네일삭제
-        if(preg_match("/\.({$config['cf_image_extension']})$/i", $write['qa_file'.$i])) {
-            delete_qa_thumbnail($write['qa_file'.$i]);
+        if(isset($g5['s3'])) {
+            $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/qa/'.clean_relative_paths($write['qa_file'.$i]);
+            run_event("s3_extend_delete_file", $delete_file);
+            
+            if(preg_match("/\.({$config['cf_image_extension']})$/i", $write['qa_file'.$i])) {
+                run_event('s3_extend_delete_qa_thumbnail', $write['qa_file'.$i]);
+            }
+        } else {
+            @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($write['qa_file'.$i]));
+            // 썸네일삭제
+            if(preg_match("/\.({$config['cf_image_extension']})$/i", $write['qa_file'.$i])) {
+                delete_qa_thumbnail($write['qa_file'.$i]);
+            }
         }
+        
     }
 
     $tmp_file  = $_FILES['bf_file']['tmp_name'][$i];
@@ -204,11 +214,20 @@ for ($i=1; $i<=$upload_count; $i++) {
         //=================================================================
 
         if ($w == 'u') {
-            // 존재하는 파일이 있다면 삭제합니다.
-            @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($write['qa_file'.$i]));
-            // 이미지파일이면 썸네일삭제
-            if(preg_match("/\.({$config['cf_image_extension']})$/i", $write['qa_file'.$i])) {
-                delete_qa_thumbnail($row['qa_file'.$i]);
+            if(isset($g5['s3'])) {
+                $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/qa/'.clean_relative_paths($write['qa_file'.$i]);
+                run_event("s3_extend_delete_file", $delete_file);
+                
+                if(preg_match("/\.({$config['cf_image_extension']})$/i", $write['qa_file'.$i])) {
+                    run_event('s3_extend_delete_qa_thumbnail', $write['qa_file'.$i]);
+                }
+            } else {
+                // 존재하는 파일이 있다면 삭제합니다.
+                @unlink(G5_DATA_PATH.'/qa/'.clean_relative_paths($write['qa_file'.$i]));
+                // 이미지파일이면 썸네일삭제
+                if(preg_match("/\.({$config['cf_image_extension']})$/i", $write['qa_file'.$i])) {
+                    delete_qa_thumbnail($row['qa_file'.$i]);
+                }
             }
         }
 
@@ -225,13 +244,18 @@ for ($i=1; $i<=$upload_count; $i++) {
         // 첨부파일 첨부시 첨부파일명에 공백이 포함되어 있으면 일부 PC에서 보이지 않거나 다운로드 되지 않는 현상이 있습니다. (길상여의 님 090925)
         $upload[$i]['file'] = abs(ip2long($_SERVER['REMOTE_ADDR'])).'_'.substr($shuffle,0,8).'_'.replace_filename($filename);
 
-        $dest_file = G5_DATA_PATH.'/qa/'.$upload[$i]['file'];
+        if(isset($g5['s3'])) {
+            $dest_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/qa/'.$upload[$i]['file'];
+            run_event("s3_extend_uploaded_file", $tmp_file, $dest_file);
+        } else {
+            $dest_file = G5_DATA_PATH.'/qa/'.$upload[$i]['file'];
 
-        // 업로드가 안된다면 에러메세지 출력하고 죽어버립니다.
-        $error_code = move_uploaded_file($tmp_file, $dest_file) or die($_FILES['bf_file']['error'][$i]);
+            // 업로드가 안된다면 에러메세지 출력하고 죽어버립니다.
+            $error_code = move_uploaded_file($tmp_file, $dest_file) or die($_FILES['bf_file']['error'][$i]);
 
-        // 올라간 파일의 퍼미션을 변경합니다.
-        chmod($dest_file, G5_FILE_PERMISSION);
+            // 올라간 파일의 퍼미션을 변경합니다.
+            chmod($dest_file, G5_FILE_PERMISSION);
+        }
     }
 }
 
