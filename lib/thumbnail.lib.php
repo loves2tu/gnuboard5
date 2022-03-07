@@ -15,7 +15,12 @@ function get_list_thumbnail($bo_table, $wr_id, $thumb_width, $thumb_height, $is_
 
     if(isset($row['bf_file']) && $row['bf_file']) {
         $filename = $row['bf_file'];
-        $filepath = G5_DATA_PATH.'/file/'.$bo_table;
+        if(isset($g5['s3'])) {
+            $filepath = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table;
+        } else {
+            $filepath = G5_DATA_PATH.'/file/'.$bo_table;
+        }
+        
         $alt = get_text($row['bf_content']);
     } else {
         $write = get_thumbnail_find_cache($bo_table, $wr_id, 'content');
