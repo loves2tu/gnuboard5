@@ -228,19 +228,32 @@ if ($sw == 'move')
     {
         if( isset($save[$i]['bf_file']) && $save[$i]['bf_file'] ){
             for ($k=0; $k<count($save[$i]['bf_file']); $k++) {
-                $del_file = run_replace('delete_file_path', clean_relative_paths($save[$i]['bf_file'][$k]), $save[$i]);
 
-                if ( is_file($del_file) && file_exists($del_file) ){
-                    @unlink($del_file);
+                if(isset($g5['s3'])) {
+                    $del_file = clean_relative_paths($save[$i]['bf_file'][$k]);
+                    run_event("s3_extend_delete_file", $del_file);
+
+                    run_event('s3_extend_delete_thumbnail', $bo_table, basename($save[$i]['bf_file'][$k]));
+                } else {
+                    $del_file = run_replace('delete_file_path', clean_relative_paths($save[$i]['bf_file'][$k]), $save[$i]);
+
+                    if ( is_file($del_file) && file_exists($del_file) ){
+                        @unlink($del_file);
+                    }
+                    
+                    // 썸네일 파일 삭제, 먼지손 님 코드 제안
+                    delete_board_thumbnail($bo_table, basename($save[$i]['bf_file'][$k]));
                 }
-                
-                // 썸네일 파일 삭제, 먼지손 님 코드 제안
-                delete_board_thumbnail($bo_table, basename($save[$i]['bf_file'][$k]));
             }
         }
         
         for ($k=0; $k<count($save[$i]['wr_contents']); $k++){
-            delete_editor_thumbnail($save[$i]['wr_contents'][$k]);
+            if(isset($g5['s3'])) {
+                run_event('s3_extend_delete_editor_thumbnail', $save[$i]['wr_contents'][$k]);
+            } else {
+                delete_editor_thumbnail($save[$i]['wr_contents'][$k]);
+            }
+            
         }
 
         sql_query(" delete from $write_table where wr_parent = '{$save[$i]['wr_id']}' ");

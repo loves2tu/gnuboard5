@@ -98,20 +98,34 @@ for ($i=$chk_count-1; $i>=0; $i--)
             $result2 = sql_query($sql2);
             while ($row2 = sql_fetch_array($result2)) {
                 // 파일삭제
-                $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '',$row2['bf_file']), $row2);
-                if( file_exists($delete_file) ){
-                    @unlink($delete_file);
-                }
+                if(isset($g5['s3'])) {
+                    $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/'.str_replace('../', '',$row2['bf_file']);
+                    run_event("s3_extend_delete_file", $delete_file);
+                    
+                    if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['bf_file'])) {
+                        run_event('s3_extend_delete_thumbnail', $bo_table, $row2['bf_file']);
+                    }
+                } else {
+                    $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '',$row2['bf_file']), $row2);
 
-                // 썸네일삭제
-                if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['bf_file'])) {
-                    delete_board_thumbnail($bo_table, $row2['bf_file']);
+                    if( file_exists($delete_file) ){
+                        @unlink($delete_file);
+                    }
+    
+                    // 썸네일삭제
+                    if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['bf_file'])) {
+                        delete_board_thumbnail($bo_table, $row2['bf_file']);
+                    }
                 }
             }
 
-            // 에디터 썸네일 삭제
-            delete_editor_thumbnail($row['wr_content']);
-
+            if(isset($g5['s3'])) {
+                run_event('s3_extend_delete_editor_thumbnail', $row['wr_content']);
+            } else {
+                // 에디터 썸네일 삭제
+                delete_editor_thumbnail($row['wr_content']);
+            }
+            
             // 파일테이블 행 삭제
             sql_query(" delete from {$g5['board_file_table']} where bo_table = '$bo_table' and wr_id = '{$row['wr_id']}' ");
 

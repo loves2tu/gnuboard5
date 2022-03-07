@@ -55,13 +55,22 @@ for($i=0;$i<$count_chk_bn_id;$i++)
                 $result2 = sql_query($sql2);
                 while ($row2 = sql_fetch_array($result2)){
 
-                    $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '', $row2['bf_file']), $row2);
-                    if( file_exists($delete_file) ){
-                        @unlink(G5_DATA_PATH.'/file/'.$bo_table.'/'.$row2['bf_file']);
-                    }
-                    // 이미지파일이면 썸네일삭제
-                    if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['bf_file'])) {
-                        delete_board_thumbnail($bo_table, $row2['bf_file']);
+                    if(isset($g5['s3'])) {
+                        $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/'.str_replace('../', '', $row2['bf_file']);
+                        run_event('s3_extend_delete_file', $delete_file);
+
+                        if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['bf_file'])) {
+                            run_event('s3_extend_delete_thumbnail', $bo_table, $row2['bf_file']);
+                        }
+                    } else {
+                        $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '', $row2['bf_file']), $row2);
+                        if( file_exists($delete_file) ){
+                            @unlink(G5_DATA_PATH.'/file/'.$bo_table.'/'.$row2['bf_file']);
+                        }
+                        // 이미지파일이면 썸네일삭제
+                        if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['bf_file'])) {
+                            delete_board_thumbnail($bo_table, $row2['bf_file']);
+                        }
                     }
                 }
                 // 파일테이블 행 삭제

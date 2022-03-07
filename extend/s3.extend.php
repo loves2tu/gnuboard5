@@ -10,15 +10,72 @@ if (file_exists($s3config_file)) {
     // s3 $g5 배열에 저장
     $g5['s3'] = new S3(G5_S3_ACCESS_KEY, G5_S3_SECRET_KEY, G5_S3_BUCKET_NAME);
 
-    add_event('s3_move_uploaded_file', 's3_uploaded_file', 10, 2);
+    add_event('s3_extend_uploaded_file', 's3_uploaded_file', 10, 2);
+    add_event('s3_extend_delete_file', 's3_delete_file', 10, 1);
+    add_event('s3_extend_delete_thumbnail', 's3_delete_thumbnail', 10, 2);
+    add_event('s3_extend_delete_editor_thumbnail', 's3_delete_editor_thumbnail', 10, 1);
 
     function s3_uploaded_file($tmp_file, $dest_file) {
         global $g5;
 
-        if($g5['s3'] == false) return false;
+        if(isset($g5['s3']) == false) return false;
 
         $result = $g5['s3']->uploadFile($tmp_file, $dest_file);
 
         return $result;
+    }
+
+    function s3_delete_file($delete_file) {
+        global $g5;
+
+        if(isset($g5['s3']) == false) return false;
+
+        if( file_exists($delete_file) ){
+            @unlink($delete_file);
+        }
+    }
+
+    function s3_delete_thumbnail($bo_table, $file) {
+        global $g5;
+
+        if(isset($g5['s3']) == false) return false;
+        if(!$bo_table || !$file) return false;
+
+        $fn = preg_replace("/\.[^\.]+$/i", "", basename($file));
+        $files = glob($g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/thumb-'.$fn.'*');
+        if (is_array($files)) {
+            foreach ($files as $filename)
+                unlink($filename);
+        }
+    }
+
+    function s3_delete_editor_thumbnail($contents) {
+        global $g5;
+        
+        if(isset($g5['s3']) == false) return false;
+        if(!$contents) return false;
+    
+        run_event('delete_editor_thumbnail_before', $contents);
+
+        // $contents 중 img 태그 추출
+        $matchs = get_editor_image($contents, false);
+
+        if(!$matchs) return;
+
+        for($i=0; $i<count($matchs[1]); $i++) {
+            // 이미지 path 구함
+            $imgurl = @parse_url($matchs[1][$i]);
+            $srcfile = $g5['s3']->getPath().'/'.G5_DATA_DIR.$imgurl['path'];
+            if(!preg_match('/(\.jpe?g|\.gif|\.png|\.webp)$/i', $srcfile)) continue;
+            $filename = preg_replace("/\.[^\.]+$/i", "", basename($srcfile));
+            $filepath = dirname($srcfile);
+            $files = glob($filepath.'/thumb-'.$filename.'*');
+            if (is_array($files)) {
+                foreach($files as $filename)
+                    unlink($filename);
+            }
+        }
+
+        run_event('delete_editor_thumbnail_after', $contents, $matchs);
     }
 }

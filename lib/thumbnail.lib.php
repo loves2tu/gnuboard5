@@ -20,7 +20,7 @@ function get_list_thumbnail($bo_table, $wr_id, $thumb_width, $thumb_height, $is_
     } else {
         $write = get_thumbnail_find_cache($bo_table, $wr_id, 'content');
         $edt = true;
-        
+
         if( $matches = get_editor_image($write['wr_content'], false) ){
             for($i=0; $i<count($matches[1]); $i++)
             {
@@ -31,8 +31,12 @@ function get_list_thumbnail($bo_table, $wr_id, $thumb_width, $thumb_height, $is_
                 else
                     $data_path = $p['path'];
 
-                $srcfile = G5_PATH.$data_path;
-
+                if(isset($g5['s3'])) {
+                    $srcfile = $g5['s3']->getPath().$data_path;
+                } else {
+                    $srcfile = G5_PATH.$data_path;    
+                }
+                
                 if(preg_match("/\.({$config['cf_image_extension']})$/i", $srcfile) && is_file($srcfile)) {
                     $size = @getimagesize($srcfile);
                     if(empty($size))
@@ -63,13 +67,23 @@ function get_list_thumbnail($bo_table, $wr_id, $thumb_width, $thumb_height, $is_
 
     if($tname) {
         if($edt) {
-            // 오리지날 이미지
-            $ori = G5_URL.$data_path;
-            // 썸네일 이미지
-            $src = G5_URL.str_replace($filename, $tname, $data_path);
+            if(isset($g5['s3'])) {
+                $ori = $g5['s3']->getUrl().$data_path;
+                $src = $g5['s3']->getUrl().str_replace($filename, $tname, $data_path);
+            } else {
+                // 오리지날 이미지
+                $ori = G5_URL.$data_path;
+                // 썸네일 이미지
+                $src = G5_URL.str_replace($filename, $tname, $data_path);
+            }
         } else {
-            $ori = G5_DATA_URL.'/file/'.$bo_table.'/'.$filename;
-            $src = G5_DATA_URL.'/file/'.$bo_table.'/'.$tname;
+            if(isset($g5['s3'])) {
+                $ori = $g5['s3']->getUrl().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/'.$filename;
+                $src = $g5['s3']->getUrl().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/'.$tname;
+            } else {
+                $ori = G5_DATA_URL.'/file/'.$bo_table.'/'.$filename;
+                $src = G5_DATA_URL.'/file/'.$bo_table.'/'.$tname;
+            }
         }
     } else {
         return $empty_array;
@@ -133,7 +147,12 @@ function get_view_thumbnail($contents, $thumb_width=0)
         else
             $data_path = $p['path'];
 
-        $srcfile = G5_PATH.$data_path;
+        if(isset($g5['s3'])) {
+            $srcfile = $g5['s3']->getPath().$data_path;
+        } else {
+            $srcfile = G5_PATH.$data_path;
+        }
+        
 
         if(is_file($srcfile)) {
             $size = @getimagesize($srcfile);
@@ -207,7 +226,12 @@ function get_view_thumbnail($contents, $thumb_width=0)
             
             // $img_tag에 editor 경로가 있으면 원본보기 링크 추가
             if(strpos($img_tag, G5_DATA_DIR.'/'.G5_EDITOR_DIR) && preg_match("/\.({$config['cf_image_extension']})$/i", $filename)) {
-                $imgurl = str_replace(G5_URL, "", $src);
+                if(isset($g5['s3'])) {
+                    $imgurl = str_replace($g5['s3']->getUrl(), "", $src);
+                } else {
+                    $imgurl = str_replace(G5_URL, "", $src);
+                }
+                
                 $attr_href = run_replace('thumb_view_image_href', G5_BBS_URL.'/view_image.php?fn='.urlencode($imgurl), $filename, '', $width, $height, $alt);
                 $thumb_tag = '<a href="'.$attr_href.'" target="_blank" class="view_image">'.$thumb_tag.'</a>';
             }

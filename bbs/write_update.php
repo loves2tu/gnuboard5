@@ -487,13 +487,23 @@ if(isset($_FILES['bf_file']['name']) && is_array($_FILES['bf_file']['name'])) {
 
             $row = sql_fetch(" select * from {$g5['board_file_table']} where bo_table = '{$bo_table}' and wr_id = '{$wr_id}' and bf_no = '{$i}' ");
 
-            $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '', $row['bf_file']), $row);
-            if( file_exists($delete_file) ){
-                @unlink($delete_file);
-            }
-            // 썸네일삭제
-            if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['bf_file'])) {
-                delete_board_thumbnail($bo_table, $row['bf_file']);
+            if(isset($g5['s3'])) {
+                $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/'.str_replace('../', '',$row2['bf_file']);
+                run_event("s3_extend_delete_file", $delete_file);
+                
+                if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['bf_file'])) {
+                    run_event('s3_extend_delete_thumbnail', $bo_table, $row['bf_file']);
+                }
+            } else {
+                $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '', $row['bf_file']), $row);
+                if( file_exists($delete_file) ){
+                    @unlink($delete_file);
+                }
+
+                // 썸네일삭제
+                if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['bf_file'])) {
+                    delete_board_thumbnail($bo_table, $row['bf_file']);
+                }
             }
         }
         else
@@ -545,13 +555,23 @@ if(isset($_FILES['bf_file']['name']) && is_array($_FILES['bf_file']['name'])) {
                 $row = sql_fetch(" select * from {$g5['board_file_table']} where bo_table = '$bo_table' and wr_id = '$wr_id' and bf_no = '$i' ");
                 
                 if(isset($row['bf_file']) && $row['bf_file']){
-                    $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '', $row['bf_file']), $row);
-                    if( file_exists($delete_file) ){
-                        @unlink(G5_DATA_PATH.'/file/'.$bo_table.'/'.$row['bf_file']);
-                    }
-                    // 이미지파일이면 썸네일삭제
-                    if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['bf_file'])) {
-                        delete_board_thumbnail($bo_table, $row['bf_file']);
+
+                    if(isset($g5['s3'])) {
+                        $delete_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/'.str_replace('../', '',$row2['bf_file']);
+                        run_event("s3_extend_delete_file", $delete_file);
+
+                        if(preg_match("/\.({$config['cf_image_extension']})$/i", $row2['bf_file'])) {
+                            run_event('s3_extend_delete_thumbnail', $bo_table, $row2['bf_file']);
+                        }   
+                    } else {
+                        $delete_file = run_replace('delete_file_path', G5_DATA_PATH.'/file/'.$bo_table.'/'.str_replace('../', '', $row['bf_file']), $row);
+                        if( file_exists($delete_file) ){
+                            @unlink(G5_DATA_PATH.'/file/'.$bo_table.'/'.$row['bf_file']);
+                        }
+                        // 이미지파일이면 썸네일삭제
+                        if(preg_match("/\.({$config['cf_image_extension']})$/i", $row['bf_file'])) {
+                            delete_board_thumbnail($bo_table, $row['bf_file']);
+                        }
                     }
                 }
             }
@@ -572,7 +592,7 @@ if(isset($_FILES['bf_file']['name']) && is_array($_FILES['bf_file']['name'])) {
             
             if(isset($g5['s3'])) {
                 $dest_file = $g5['s3']->getPath().'/'.G5_DATA_DIR.'/file/'.$bo_table.'/'.$upload[$i]['file'];
-                run_event("s3_move_uploaded_file", $tmp_file, $dest_file);
+                run_event("s3_extend_uploaded_file", $tmp_file, $dest_file);
             } else {
                 $dest_file = G5_DATA_PATH.'/file/'.$bo_table.'/'.$upload[$i]['file'];
                 // 업로드가 안된다면 에러메세지 출력하고 죽어버립니다.
