@@ -9,6 +9,7 @@ if(function_exists('social_log_file_delete')){
 
 $g5['title'] = '관리자메인';
 include_once ('./admin.head.php');
+include_once ('./admin.update.php');
 
 $new_member_rows = 5;
 $new_point_rows = 5;

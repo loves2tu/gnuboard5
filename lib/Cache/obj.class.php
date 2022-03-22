@@ -4,6 +4,7 @@ if (!defined('_GNUBOARD_')) exit;
 Class G5_object_cache {
     public $writes = array();
     public $contents = array();
+    public $version = array();
     public $etcs = array();
 
 	function get($type, $key, $group ='default') {
@@ -14,6 +15,9 @@ Class G5_object_cache {
                 break;
             case 'content' :
                 $datas = $this->contents;
+                break;
+            case 'version' :
+                $datas = $this->version;
                 break;
             default :
                 $datas = $this->etcs;
@@ -41,6 +45,9 @@ Class G5_object_cache {
             case 'content':
                 $datas = $this->contents;
                 break;
+            case 'version' :
+                $datas = $this->version;
+                break;
             default :
                 $datas = $this->etcs;
                 break;
@@ -60,6 +67,9 @@ Class G5_object_cache {
             case 'content':
                 $this->contents[$group][$key] = $data;
                 break;
+            case 'version' :
+                $datas = $this->version;
+                break;
             default :
                 $datas = $this->etcs[$group][$key] = $data;
                 break;
@@ -74,6 +84,9 @@ Class G5_object_cache {
                 break;
             case 'content':
                 $datas = $this->contents;
+                break;
+            case 'version' :
+                $datas = $this->version;
                 break;
             default :
                 $datas = $this->etcs;
