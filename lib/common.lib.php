@@ -3933,36 +3933,3 @@ function option_array_checked($option, $arr=array()){
 
     return $checked;
 }
-
-function latest_version_check() {
-    $url = 'https://api.github.com/repos/gnuboard/gnuboard5/releases';
-    $token = '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';
-
-    $curl = curl_init();
-    curl_setopt_array($curl, array(
-        CURLOPT_URL => $url,
-        CURLOPT_HEADER => 0,
-        CURLOPT_CUSTOMREQUEST => "GET",
-        CURLOPT_USERAGENT => 'gnuboard',
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_TIMEOUT => 3600,
-        CURLOPT_AUTOREFERER => true,
-        CURLOPT_BINARYTRANSFER => true,
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_FOLLOWLOCATION => 1,
-        CURLOPT_FAILONERROR => true,
-        CURLOPT_HTTPHEADER => array(
-            'Authorization: token  ' . $token
-        ),
-    ));
-
-    if(curl_errno($curl)) throw new Exception(curl_error($curl));
-
-    $cinfo = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-    $response = json_decode(curl_exec($curl));
-
-    if(empty($response)) return false;
-
-    return $response[0]->tag_name;
-}
