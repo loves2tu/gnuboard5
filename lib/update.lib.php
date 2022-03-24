@@ -4,8 +4,10 @@ if (!defined('_GNUBOARD_')) exit;
 class G5Update {
     private $g5_update;
 
-    public $target_version = false;
-    public $now_version = false;
+    public $path = null;
+    public $latest_version = null;
+    public $target_version = null;
+    public $now_version = null;
     
     // token값 입력 필요
     private $token = null;
@@ -14,7 +16,13 @@ class G5Update {
     private $version_list = array();
     private $compare_list = array();
 
-    function __construct() {  }
+    public function __construct() {  }
+
+    public function clearUpdatedir() {
+        rm_rf(G5_DATA_PATH.'/update'); 
+        @mkdir(G5_DATA_PATH.'/update', G5_DIR_PERMISSION, true);
+        @chmod(G5_DATA_PATH.'/update', G5_DIR_PERMISSION, true);
+    }
 
     public function setNowVersion($now_version = null) {
         $this->now_version = $now_version;
@@ -46,26 +54,77 @@ class G5Update {
 
     public function downloadVersion($version = null) {
         if($version == null) return false;
+        $this->clearUpdatedir();
+
+        // 테스트용 코드
+        // $version = $this->target_version;
+
+        $save = G5_DATA_PATH.'/update/gnuboard.zip';
+
+        $zip = @fopen($save, 'w+');
+        if($zip == false) return false;
+
+        $result = $this->getApiCurlResult('zip', $version);
+        if($result == false) return false;
+
+        $file_result = @fwrite($zip, $result);
+        if($file_result == false) return false;
+
+        exec('unzip '.$save.' -d '.G5_DATA_PATH.'/update/'.$version);
+        exec('mv '.G5_DATA_PATH.'/update/'.$version.'/gnuboard-*/* '.G5_DATA_PATH.'/update/'.$version);
+        exec('rm -rf '.G5_DATA_PATH.'/update/'.$version.'/gnuboard-*/');
+        exec('rm -rf '.$save);
+
+        return true;
     }
 
-    public function checkCompareModFile($version) {
-        if($version == null) return false;
-    }
+    public function checkSameVersionComparison($list = null) {
+        if($this->now_version == null) return false;
+        if($list == null) return false;
 
-    public function compareFiles($version1 = null) {
-        if($version1 == null || $version2 == null) return false;
+        $result = $this->downloadVersion($this->now_version);
+        if($result == false) return false;
+
+        $check = array();
+        $check['type'] = 'Y';
+        foreach($list as $key => $var) {
+            $now_file_path = G5_PATH.'/'.$var;
+            $release_file_path = G5_DATA_PATH.'/update/'.$this->target_version.'/'.$var;
+            // 테스트용 코드
+            // $release_file_path = G5_DATA_PATH.'/update/'.$this->now_version.'/'.$var;
+
+            if(!file_exists($now_file_path)) continue;
+            if(!file_exists($release_file_path)) continue;
+            
+            $now_fp = @fopen($now_file_path, 'r');
+            $release_fp = @fopen($release_file_path, 'r');
+
+            $now_content = @fread($now_fp, filesize($now_file_path));
+            $release_content = @fread($release_fp, filesize($release_file_path));
+
+            if($now_content != $release_content) {
+                $check['type'] = 'N';
+                $check['item'][] = $var;
+            }
+        }
+
+        return $check;
     }
 
     public function getLatestVersion() {
-        $result = $this->getVersionList();
+        if($this->latest_version == null) {
+            $result = $this->getVersionList();
+            
+            if($result == false) return false;
 
-        if($result == false) return false;
+            $this->latest_version = $result[0];
+        }
 
-        return $result[0];
+        return $this->latest_version;
     }
 
     public function getVersionCompareList() {
-        if($this->now_version == false || $this->target_version == false) return false;
+        if($this->now_version == null || $this->target_version == null) return false;
         $result = $this->getApiCurlResult("compare", $this->now_version, $this->target_version);
 
         if($result == false) return false;
@@ -90,7 +149,7 @@ class G5Update {
                 break;
             case "zip":
                 if($param1 == null) return false;
-                $url .= "/gnuboard/gnuboard5/zipball/".$param1;
+                $url .= "/repos/gnuboard/gnuboard5/zipball/".$param1;
                 break;
             default:
                 $url = false;
@@ -119,7 +178,11 @@ class G5Update {
         ));
     
         $cinfo = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        $response = json_decode(curl_exec($curl));
+        if($option == 'zip') {
+            $response = curl_exec($curl);
+        } else {
+            $response = json_decode(curl_exec($curl));
+        }
 
         if(curl_errno($curl)) {
             return false;
