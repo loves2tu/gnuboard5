@@ -6,8 +6,6 @@
 
         if($version == false) throw new Exception("현재버전 정보를 가져오는데 실패했습니다.");
 
-        $g5_update = new G5Update();
-        $g5_update->setNowVersion("v".G5_GNUBOARD_VER);
         $latest_version = $g5_update->getLatestVersion();
         if($latest_version == false) throw new Exception("정보조회에 실패했습니다.");
 

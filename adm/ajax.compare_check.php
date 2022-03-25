@@ -1,13 +1,11 @@
 <?php
     include_once ("./_common.php");
 
-    $g5_update = new G5Update();
     try {
         $version = isset($_POST['version']) ? $_POST['version'] : false;
 
         if($version == false) throw new Exception("현재버전 정보를 가져오는데 실패했습니다.");
 
-        $g5_update->setNowVersion("v".G5_GNUBOARD_VER);
         $g5_update->setTargetVersion($version);
         $version_list = $g5_update->getVersionList();
         if($version_list == false) return false;

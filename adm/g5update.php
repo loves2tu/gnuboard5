@@ -4,7 +4,7 @@ include_once('./_common.php');
 
 $g5['title'] = '그누보드 업데이트';
 include_once ('./admin.head.php');
-$g5_update = new G5Update();
+
 $version_list = $g5_update->getVersionList();
 $latest_version = $g5_update->getLatestVersion();
 if($latest_version == false) $message = "정보조회에 실패했습니다.";
@@ -14,10 +14,12 @@ $this_version = G5_GNUBOARD_VER;
 
 <?php if($latest_version != false) { ?>
 <div class="version_box">
-    <form action="./g5update_update.php">
+    <form name="update_box" class="update_box" action="./g5update_update.php" onsubmit="return update_submit(this);">
+        <input type="hidden" name="compare_check" value="0">
         <p>현재 그누보드 버전 : v<?php echo $this_version; ?></p>
         <p>최신 그누보드 버전 : <?php echo $latest_version; ?></p>
 
+        <?php if($this_version != $latest_version) { ?>
         <span>목표 버전</span>
         <select class="version_list" name="version_list">
             <?php foreach($version_list as $key => $var) { ?>
@@ -26,7 +28,7 @@ $this_version = G5_GNUBOARD_VER;
         </select>
 
         <button type="button" class="btn_dup_check">업데이트 가능여부</button>
-        <button type="submit" class="btn_update">지금 업데이트</button>
+        <?php } ?>
     </form>
 
 </div>
@@ -63,11 +65,16 @@ $this_version = G5_GNUBOARD_VER;
                         return false;
                     }
                     
+                    $(".btn_dup_check").remove();
                     $(".version_box").append("<p>"+data.message+"</p>");
-                    
-                    for(var i = 0; i < data.item.length; i++ ) {
-                        $(".version_box").append("<p>"+data.item[i]+"</p>");
+                    if(data.item.length > 0) {
+                        $(".compare_check").val(1);
+                        for(var i = 0; i < data.item.length; i++ ) {
+                            $(".version_box").append("<p>"+data.item[i]+"</p>");
+                        }
                     }
+
+                    $(".update_box").append("<button type=\"submit\" class=\"btn_update\">지금 업데이트</button>");
                 },
                 error:function(request,status,error){
                     inAjax = false;
@@ -79,6 +86,17 @@ $this_version = G5_GNUBOARD_VER;
         });
     })
 
+function update_submit(f) {
+    if(f.compare_check.value == 1) {
+        var result = confirm("(주의)기존버전과 동일한버전의 코드와 일치하지 않는 파일들이 존재합니다.\n강제패치를 진행하시겠습니까?");
+
+        if(!result) {
+            return false;
+        }
+    }
+
+    return true;
+}
 </script>
 
 <?php
