@@ -10,8 +10,7 @@ class G5Update {
     public $now_version = null;
     
     // token값 입력 필요
-    private $token = "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";
-    // private $token = null;
+    private $token = null;
     
     private $url = "https://api.github.com";
     private $version_list = array();
