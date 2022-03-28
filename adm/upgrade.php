@@ -1,5 +1,5 @@
 <?php
-$sub_menu = '100500';
+$sub_menu = '100600';
 include_once('./_common.php');
 
 $g5['title'] = '그누보드 업데이트';
@@ -14,18 +14,38 @@ $this_version = G5_GNUBOARD_VER;
 
 <?php if($latest_version != false) { ?>
 <div class="version_box">
-    <form name="update_box" class="update_box" action="./g5update_update.php" onsubmit="return update_submit(this);">
+    <form method="POST" name="update_box" class="update_box" action="./upgrade_update.php" onsubmit="return update_submit(this);">
         <input type="hidden" name="compare_check" value="0">
         <p>현재 그누보드 버전 : v<?php echo $this_version; ?></p>
         <p>최신 그누보드 버전 : <?php echo $latest_version; ?></p>
 
         <?php if($this_version != $latest_version) { ?>
-        <span>목표 버전</span>
-        <select class="version_list" name="version_list">
-            <?php foreach($version_list as $key => $var) { ?>
-                <option value="<?php echo $var; ?>"><?php echo $var; ?></option>
-            <?php } ?>
-        </select>
+        <div>
+            <span>목표 버전</span>
+            <select class="version_list" name="version_list">
+                <?php foreach($version_list as $key => $var) { ?>
+                    <option value="<?php echo $var; ?>"><?php echo $var; ?></option>
+                <?php } ?>
+            </select>
+        </div>
+        
+        <div>
+            <span>포트</span>
+            <label for="ftp">ftp</label>
+            <input id="ftp" type="radio" name="port" value="ftp" checked>
+            <label for="sftp">sftp</label>
+            <input id="sftp" type="radio" name="port" value="sftp">
+        </div>
+
+        <div>
+            <label for="username">사용자 이름</label>
+            <input id="username" name="username">
+        </div>
+
+        <div>
+            <label for="password">사용자 비밀번호</label>
+            <input id="password" name="password">
+        </div>
 
         <button type="button" class="btn_dup_check">업데이트 가능여부</button>
         <?php } ?>
@@ -43,6 +63,9 @@ $this_version = G5_GNUBOARD_VER;
         var inAjax = false;
         $(".btn_dup_check").click(function() {
             var version = $(".version_list").val();
+            var username = $("#username").val();
+            var password = $("#password").val();
+            var port = $("input[name=\"port\"]:checked").val();
             
             if(inAjax == false) {
                 inAjax = true;
@@ -55,7 +78,10 @@ $this_version = G5_GNUBOARD_VER;
                 url: "./ajax.compare_check.php",
                 type: "POST",
                 data: {
-                    'version' : version
+                    'version' : version,
+                    'username' : username,
+                    'password' : password,
+                    'port' : port
                 },
                 dataType: "json",
                 success: function(data) {

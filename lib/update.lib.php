@@ -10,18 +10,60 @@ class G5Update {
     public $now_version = null;
     
     // token값 입력 필요
-    private $token = null;
+    private $token = "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";
+    // private $token = null;
     
     private $url = "https://api.github.com";
     private $version_list = array();
     private $compare_list = array();
 
+    private $conn;
+    private $port;
+    private $connPath;
+    private $hostname;
+    private $username;
+    private $userPassword;
+
     public function __construct() {  }
 
+    public function connect($hostname, $port, $username, $userPassword) {
+        $this->port = $port;
+
+        if($port == "ftp") {
+            $this->conn = @ftp_connect($hostname, 21);
+        } else if($port == "sftp"){
+            if(function_exists("ssh2_connect")) {
+                if($this->conn != false) return true;
+                
+                $this->conn = @ssh2_connect($hostname, 22);
+                if($this->conn == false) return false;
+                if(!ssh2_auth_password($this->conn, $username, $userPassword)) return false;
+    
+                $this->connPath = @ssh2_sftp($this->conn);
+                if(!$this->connPath) {
+                    $this->conn = false;
+                    $this->conPath = false;
+                    
+                    return false;
+                }
+
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    public function returnMessage() {
+
+    }
+
     public function clearUpdatedir() {
-        rm_rf(G5_DATA_PATH.'/update'); 
-        @mkdir(G5_DATA_PATH.'/update', G5_DIR_PERMISSION, true);
-        @chmod(G5_DATA_PATH.'/update', G5_DIR_PERMISSION, true);
+        rm_rf(G5_DATA_PATH.'/update');
+        mkdir(G5_DATA_PATH.'/update', G5_DIR_PERMISSION, true);
+        @chmod(G5_DATA_PATH.'/update', G5_DIR_PERMISSION);
     }
 
     public function setNowVersion($now_version = null) {
@@ -52,16 +94,31 @@ class G5Update {
         return $this->version_list;
     }
 
+    public function writeUpdateFile($originPath, $changePath) {
+        if($this->conn == false) return false;
+        
+        $fp = fopen($changePath, 'r');
+        $content = @fread($fp, filesize($changePath));
+        if($content == false) return false;
+
+        $result = file_put_contents("ssh2.sftp://".intval($this->connPath).$originPath, $content);
+        if($result == false) return false;
+
+        return true;
+    }
+
     public function downloadVersion($version = null) {
         if($version == null) return false;
+        if($this->conn == false) return false;
+
         $this->clearUpdatedir();
 
         // 테스트용 코드
         // $version = $this->target_version;
 
-        $save = G5_DATA_PATH.'/update/gnuboard.zip';
-
-        $zip = @fopen($save, 'w+');
+        $save = G5_DATA_PATH."/update/gnuboard.zip";
+        
+        $zip = fopen($save, 'w+');
         if($zip == false) return false;
 
         $result = $this->getApiCurlResult('zip', $version);
@@ -74,7 +131,7 @@ class G5Update {
         exec('mv '.G5_DATA_PATH.'/update/'.$version.'/gnuboard-*/* '.G5_DATA_PATH.'/update/'.$version);
         exec('rm -rf '.G5_DATA_PATH.'/update/'.$version.'/gnuboard-*/');
         exec('rm -rf '.$save);
-
+        
         return true;
     }
 
