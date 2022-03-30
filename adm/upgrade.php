@@ -85,6 +85,7 @@ $this_version = G5_GNUBOARD_VER;
                 },
                 dataType: "json",
                 success: function(data) {
+                    console.log(data);
                     inAjax = false;
                     if(data.error != 0) {
                         alert(data.message);
@@ -93,12 +94,12 @@ $this_version = G5_GNUBOARD_VER;
                     
                     $(".btn_dup_check").remove();
                     $(".version_box").append("<p>"+data.message+"</p>");
-                    if(data.item.length > 0) {
-                        $(".compare_check").val(1);
-                        for(var i = 0; i < data.item.length; i++ ) {
-                            $(".version_box").append("<p>"+data.item[i]+"</p>");
-                        }
-                    }
+                    // if(data.item.length > 0) {
+                    //     $(".compare_check").val(1);
+                    //     for(var i = 0; i < data.item.length; i++ ) {
+                    //         $(".version_box").append("<p>"+data.item[i]+"</p>");
+                    //     }
+                    // }
 
                     $(".update_box").append("<button type=\"submit\" class=\"btn_update\">지금 업데이트</button>");
                 },

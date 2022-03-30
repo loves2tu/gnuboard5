@@ -29,7 +29,17 @@ class G5Update {
         $this->port = $port;
 
         if($port == "ftp") {
-            $this->conn = @ftp_connect($hostname, 21);
+            if(function_exists("ftp_connect")) {
+                $this->conn = @ftp_connect($hostname, 21);
+                if($this->conn == false) return false;
+
+                $login = ftp_login($this->conn, $username, $userPassword);
+                if($login == false) return false;
+
+                ftp_pasv($this->conn, true);
+
+                return true;
+            }
         } else if($port == "sftp"){
             if(function_exists("ssh2_connect")) {
                 if($this->conn != false) return true;
@@ -47,16 +57,10 @@ class G5Update {
                 }
 
                 return true;
-            } else {
-                return false;
             }
         }
 
         return false;
-    }
-
-    public function returnMessage() {
-
     }
 
     public function clearUpdatedir() {
@@ -100,8 +104,12 @@ class G5Update {
         $content = @fread($fp, filesize($changePath));
         if($content == false) return false;
 
-        $result = file_put_contents("ssh2.sftp://".intval($this->connPath).$originPath, $content);
-        if($result == false) return false;
+        if($this->port == 'ftp') {
+            // ftp_put()
+        } else if($this->port == 'sftp') {
+            $result = file_put_contents("ssh2.sftp://".intval($this->connPath).$originPath, $content);
+            if($result == false) return false;
+        }
 
         return true;
     }

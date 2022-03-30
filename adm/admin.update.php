@@ -1,14 +1,14 @@
 <?php
     if (!defined('_GNUBOARD_')) exit;
 ?>
-<div class="update_box">
-    <button class="btn_check_update">업데이트 확인</button>
+<div class="upgrade_box">
+    <button class="btn_check_upgrade">업데이트 확인</button>
 </div>
 
 <script>
     var isAjax = false;
     $(function() {
-        $(".btn_check_update").click(function() {
+        $(".btn_check_upgrade").click(function() {
             if(isAjax == false) {
                 isAjax = true;
             } else {
@@ -17,7 +17,7 @@
             }
 
             $.ajax({
-                url: "./ajax.check_update.php",
+                url: "./ajax.check_upgrade.php",
                 type: "POST",
                 dataType: "json",
                 success: function(data) {
@@ -29,8 +29,8 @@
 
                     alert(data.message);
                     if(data.item == 1) {
-                        $tag = "<button class=\"btn_update\">지금 업데이트</button>";
-                        $(".update_box").append($tag);
+                        $tag = "<button class=\"btn_upgrade\">지금 업데이트</button>";
+                        $(".upgrade_box").append($tag);
                     }
                 },
                 error:function(request,status,error){
@@ -42,5 +42,9 @@
             return false;
         });
     });
+
+    $(".btn_upgrade").click(function() {
+        location.href = "<?php echo G5_ADMIN_URL; ?>"+'/upgrade.php';
+    })
 
 </script>
