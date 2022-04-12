@@ -3,25 +3,33 @@ $sub_menu = '100600';
 include_once('./_common.php');
 
 $g5['title'] = '그누보드 step1';
-include_once ('./admin.head.php');
+include_once ('../admin.head.php');
 
-function build_folder_structure(&$dirs, $path_array) {
-    if (count($path_array) > 1) {
-        if (!isset($dirs[$path_array[0]])) {
-            $dirs[$path_array[0]] = array();
-        }
-
-        build_folder_structure($dirs[$path_array[0]], array_splice($path_array, 1));
-    } else {
-        $dirs[] = $path_array[0];
-    }
-}
-
-$target_version = isset($_POST['version_list']) ? $_POST['version_list'] : null;
+$target_version = isset($_POST['target_version']) ? $_POST['target_version'] : null;
 $username = isset($_POST['username']) ? $_POST['username'] : null;
 $userpassword = isset($_POST['password']) ? $_POST['password'] : null;
 $port = isset($_POST['port']) ? $_POST['port'] : null;
 
+$totalSize = $g5['update']->getTotalStorageSize();
+$freeSize = $g5['update']->getUseableStorageSize();
+$useSize = $g5['update']->getUseStorageSize();
+$usePercent = $g5['update']->getUseStoragePercenty();
+
+?>
+<div>
+    <p>사용량 : <?php echo $useSize; ?>/<?php echo $totalSize; ?> (<?php echo $usePercent; ?>%)</p>
+    <br>
+    <br>
+    <br>
+    <br>
+</div>
+
+<?php
+if($g5['update']->checkInstallAvailable() == false ) {
+    die("가용용량이 부족합니다. (20MB 이상)");
+} else {
+    echo "<p>업데이트 가능</p>";
+}
 if($target_version == null) die("목표버전 정보가 입력되지 않았습니다.");
 if($port == null) die("포트가 입력되지 않았습니다.");
 if($username == null)  die("{$port}계정명이 입력되지 않았습니다.");
@@ -31,21 +39,25 @@ if($target_version == 'v'.G5_GNUBOARD_VER) die("현재버전과 목표버전이 
 $conn_result = $g5['update']->connect($_SERVER['HTTP_HOST'], $port, $username, $userpassword);
 if($conn_result == false) die("연결에 실패했습니다.");
 
-$g5['update']->setTargetVersion($version_list);
+$result = $g5['update']->makeUpdateDir();
+if($result == false) die("디렉토리 생성에 실패했습니다.");
+
+$g5['update']->setTargetVersion($target_version);
 $list = $g5['update']->getVersionCompareList();
 if($list == null) die("비교파일리스트가 존재하지 않습니다.");
 
 $compare_list = $g5['update']->checkSameVersionComparison($list);
 if($compare_list == false) die("파일 비교에 실패했습니다.");
+
 ?>
 
 <div class="version_box">
-    <form method="POST" name="update_box" class="update_box" action="./upgrade_step2.php" onsubmit="return update_submit(this);">
+    <form method="POST" name="update_box" class="update_box" action="./step2.php" onsubmit="return update_submit(this);">
         <input type="hidden" name="compare_check" value="<?php echo $compare_list['type']; ?>">
         <input type="hidden" name="username" value="<?php echo $username; ?>">
         <input type="hidden" name="password" value="<?php echo $userpassword; ?>">
         <input type="hidden" name="port" value="<?php echo $port; ?>">
-        <input type="hidden" name="target_version" value="<?php echo $version_list; ?>">
+        <input type="hidden" name="target_version" value="<?php echo $target_version; ?>">
         <?php if($compare_list['type'] == 'Y') { ?>
             <button type="submit" class="btn btn_submit">업데이트 진행</button>
         <?php } else { ?>
@@ -84,15 +96,7 @@ if($compare_list == false) die("파일 비교에 실패했습니다.");
 </script>
 
 <?php
-    include_once ('./admin.tail.php');
-// foreach($list as $key => $var) {
-//     $path_array = explode('/', $var);
-//     build_folder_structure($parray, $path_array);
-// }
-
-// foreach($parray as $key => $var) {
-//     echo $key =>
-// }
+    include_once ('../admin.tail.php');
 ?>
 
 

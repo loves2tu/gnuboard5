@@ -3,7 +3,7 @@ $sub_menu = '100600';
 include_once('./_common.php');
 
 $g5['title'] = '그누보드 업데이트';
-include_once ('./admin.head.php');
+include_once ('../admin.head.php');
 
 $this_version = G5_GNUBOARD_VER;
 
@@ -26,7 +26,7 @@ foreach($content_url as $key => $var) {
     .content_title {font-size:16px; font-weight:bold;}
 </style>
 <div class="version_box">
-    <form method="POST" name="update_box" class="update_box" action="./upgrade_step1.php" onsubmit="return update_submit(this);">
+    <form method="POST" name="update_box" class="update_box" action="./step1.php" onsubmit="return update_submit(this);">
         <input type="hidden" name="compare_check" value="0">
         <?php if($this_version != $latest_version) { ?>
         <table style="width:400px; text-align:left;">
@@ -37,7 +37,7 @@ foreach($content_url as $key => $var) {
                 <tr>
                     <th>목표버전</th>
                     <td>
-                        <select class="version_list" name="version_list">
+                        <select class="target_version" name="target_version">
                             <?php foreach($version_list as $key => $var) { ?>
                                 <option value="<?php echo $var; ?>"><?php echo $var; ?></option>
                             <?php } ?>
@@ -96,7 +96,7 @@ foreach($content_url as $key => $var) {
     $(function() {
         var inAjax = false;
 
-        $(".version_list").change(function() {
+        $(".target_version").change(function() {
             var version = $(this).val();
             
             if(inAjax == false) {
@@ -133,7 +133,7 @@ foreach($content_url as $key => $var) {
         })
 
         $(".btn_connect_check").click(function() {
-            var version = $(".version_list").val();
+            var version = $(".target_version").val();
             var username = $("#username").val();
             var password = $("#password").val();
             var port = $("input[name=\"port\"]:checked").val();
@@ -175,5 +175,5 @@ foreach($content_url as $key => $var) {
 </script>
 
 <?php
-    include_once ('./admin.tail.php');
+    include_once ('../admin.tail.php');
 ?>
