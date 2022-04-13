@@ -1,4 +1,6 @@
 <?php
+if (!defined('_GNUBOARD_')) exit;
+
 $sub_menu = '100600';
 include_once('./_common.php');
 
@@ -19,16 +21,13 @@ $usePercent = $g5['update']->getUseStoragePercenty();
 <div>
     <p>사용량 : <?php echo $useSize; ?>/<?php echo $totalSize; ?> (<?php echo $usePercent; ?>%)</p>
     <br>
-    <br>
-    <br>
-    <br>
 </div>
 
 <?php
 if($g5['update']->checkInstallAvailable() == false ) {
     die("가용용량이 부족합니다. (20MB 이상)");
 } else {
-    echo "<p>업데이트 가능</p>";
+    echo "<p><b>업데이트 가능</b></p>";
 }
 if($target_version == null) die("목표버전 정보가 입력되지 않았습니다.");
 if($port == null) die("포트가 입력되지 않았습니다.");
@@ -58,17 +57,6 @@ if($compare_list == false) die("파일 비교에 실패했습니다.");
         <input type="hidden" name="password" value="<?php echo $userpassword; ?>">
         <input type="hidden" name="port" value="<?php echo $port; ?>">
         <input type="hidden" name="target_version" value="<?php echo $target_version; ?>">
-        <?php if($compare_list['type'] == 'Y') { ?>
-            <button type="submit" class="btn btn_submit">업데이트 진행</button>
-        <?php } else { ?>
-            <?php if($compare_list['type'] == 'N') { ?>
-                <p style="color:red; font-weight:bold;">기존 버전간의 변경된 파일이 존재합니다.</p>
-            <?php } ?>
-            <div style="margin-top:30px;">
-                <button type="submit" class="btn btn_submit">강제 업데이트 진행</button>
-                <button type="" class="btn btn_03">업데이트 진행 취소</button>
-            </div>
-        <?php } ?>
         <?php foreach($list as $key => $var) {
             $txt = '';
             if(isset($var) && isset($compare_list['item'])) {
@@ -78,10 +66,26 @@ if($compare_list == false) die("파일 비교에 실패했습니다.");
             } ?>
             <p>파일위치 : <?php echo $var.$txt; ?><p>
         <?php } ?>
+        <br>
+        <?php if($compare_list['type'] == 'Y') { ?>
+            <button type="submit" class="btn btn_submit">업데이트 진행</button>
+        <?php } else { ?>
+            <?php if($compare_list['type'] == 'N') { ?>
+                <p style="color:red; font-weight:bold;">기존 버전간의 변경된 파일이 존재합니다.</p>
+            <?php } ?>
+            <div style="margin-top:30px;">
+                <button type="submit" class="btn btn_submit">강제 업데이트 진행</button>
+                <button type="button" class="btn btn_03 btn_cancel">업데이트 진행 취소</button>
+            </div>
+        <?php } ?>
     </form>
 </div>
 
 <script>
+    $(".btn_cancel").click(function() {
+        history.back();
+    })
+
     function update_submit(f) {
         if(f.compare_check.value == 'N') {
             if(confirm("기존에 변경한 파일에 문제가 발생할 수 있습니다.\n패치 진행하시겠습니까?")) {

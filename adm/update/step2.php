@@ -1,9 +1,11 @@
 <?php
+if (!defined('_GNUBOARD_')) exit;
+
 $sub_menu = '100600';
 include_once('./_common.php');
 
 $g5['title'] = '그누보드 step2';
-include_once ('./admin.head.php');
+include_once ('../admin.head.php');
 
 $target_version = isset($_POST['target_version']) ? $_POST['target_version'] : null;
 $username = isset($_POST['username']) ? $_POST['username'] : null;
@@ -25,8 +27,6 @@ if($result == false) die("목표버전 다운로드에 실패했습니다.");
 
 ?>
     <p style="font-size:15px; font-weight:bold;"><?php echo $g5['update']->targetVersion; ?> 버전 파일 다운로드 완료</p>
-    <br>
-    <br>
     <br>
 <?php
 
@@ -58,5 +58,5 @@ $g5['update']->disconnect();
 </div>
 
 <?php
-include_once ('./admin.tail.php');
+include_once ('../admin.tail.php');
 ?>

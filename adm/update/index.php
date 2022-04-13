@@ -1,4 +1,6 @@
 <?php
+if (!defined('_GNUBOARD_')) exit;
+
 $sub_menu = '100600';
 include_once('./_common.php');
 
